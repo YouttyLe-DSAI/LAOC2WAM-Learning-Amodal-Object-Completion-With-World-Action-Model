@@ -12,8 +12,8 @@ paths:
 pseudo_label:
   # Model dùng làm Occlusion / Boundary / Description agent
   vlm_model: gpt-4o
-  instance_prompt: "a photo of sks object"   # token đặc trưng kiểu DreamBooth
-  class_prompt: "a photo of an object"       # dùng cho prior preservation
+  instance_prompt: "a photo of sks backpack"
+  class_prompt: "a photo of backpack"
   dilate_kernel: 5                           # dilation cho occluder mask (px)
 
 model:
