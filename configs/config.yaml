@@ -6,20 +6,25 @@ paths:
   raw_images: data/raw
   cocoa_dir: data/cocoa
   pseudo_labels: data/pseudo_labels
-  train_ready: data/train_ready
+  # LƯU Ý: trỏ thẳng vào instance_images/ (nơi có ảnh + metadata.jsonl),
+  # không phải data/train_ready (thư mục cha) -- xem 02b_prepare_dreambooth_data.py
+  train_ready: data/train_ready/instance_images
   output_dir: outputs
 
 pseudo_label:
   # Model dùng làm Occlusion / Boundary / Description agent
   vlm_model: gpt-4o
-  instance_prompt: "a photo of sks backpack"
-  class_prompt: "a photo of backpack"
+  instance_prompt: "a photo of sks object"   # token đặc trưng kiểu DreamBooth
+  class_prompt: "a photo of an object"       # dùng cho prior preservation
   dilate_kernel: 5                           # dilation cho occluder mask (px)
 
 model:
-  base_model: "runwayml/stable-diffusion-inpainting"
+  # QUAN TRỌNG: dùng bản SD text-to-image thường (4-kênh input), KHÔNG dùng
+  # bản "-inpainting" (9-kênh) ở đây -- script 04_train_lora.py train theo
+  # công thức DreamBooth chuẩn (chỉ ảnh + caption), không tạo mask/ảnh nền
+  # che nên không tương thích với UNet 9-kênh của bản inpainting.
+  base_model: "runwayml/stable-diffusion-v1-5"
   resolution: 512
-  # đổi sang "stabilityai/stable-diffusion-2-inpainting" nếu muốn bản lớn hơn
 
 train:
   mode: lora            # lora | full_dreambooth
