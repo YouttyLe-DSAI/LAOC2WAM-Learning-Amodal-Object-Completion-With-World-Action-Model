@@ -6,34 +6,25 @@ paths:
   raw_images: data/raw
   cocoa_dir: data/cocoa
   pseudo_labels: data/pseudo_labels
-<<<<<<< HEAD
   # LƯU Ý: trỏ thẳng vào instance_images/ (nơi có ảnh + metadata.jsonl),
   # không phải data/train_ready (thư mục cha) -- xem 02b_prepare_dreambooth_data.py
-=======
->>>>>>> 456f3e57323e9efe6fa483447a4ffa75ecb77c97
   train_ready: data/train_ready/instance_images
   output_dir: outputs
 
 pseudo_label:
-  # Model dùng làm Occlusion / Boundary / Description agent
   vlm_model: gpt-4o
-  instance_prompt: "a photo of sks object"   # token đặc trưng kiểu DreamBooth
-  class_prompt: "a photo of an object"       # dùng cho prior preservation
-  dilate_kernel: 5                           # dilation cho occluder mask (px)
+  instance_prompt: "a photo of sks object"
+  class_prompt: "a photo of an object"
+  dilate_kernel: 5
 
 model:
-<<<<<<< HEAD
   # QUAN TRỌNG: dùng bản SD text-to-image thường (4-kênh input), KHÔNG dùng
-  # bản "-inpainting" (9-kênh) ở đây -- script 04_train_lora.py train theo
-  # công thức DreamBooth chuẩn (chỉ ảnh + caption), không tạo mask/ảnh nền
-  # che nên không tương thích với UNet 9-kênh của bản inpainting.
-=======
->>>>>>> 456f3e57323e9efe6fa483447a4ffa75ecb77c97
+  # bản "-inpainting" (9-kênh) ở đây.
   base_model: "runwayml/stable-diffusion-v1-5"
   resolution: 512
 
 train:
-  mode: lora            # lora | full_dreambooth
+  mode: lora
   lora_rank: 8
   lora_alpha: 16
   lora_dropout: 0.05
@@ -41,11 +32,11 @@ train:
   train_batch_size: 1
   gradient_accumulation_steps: 4
   num_train_epochs: 50
-  max_train_steps: null        # null = tính từ num_train_epochs
-  mixed_precision: "fp16"      # fp16 phù hợp T4/P100 trên Kaggle
+  max_train_steps: null
+  mixed_precision: "fp16"
   prior_preservation: true
   prior_loss_weight: 1.0
-  num_class_images: 50         # ảnh "class" sinh tự động cho prior preservation
+  num_class_images: 50
   seed: 42
   checkpointing_steps: 200
 
