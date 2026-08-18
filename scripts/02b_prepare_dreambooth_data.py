@@ -65,7 +65,7 @@ def main():
     if not src_paths:
         raise SystemExit(f"Không có ảnh nào trong {subject_dir}")
 
-    meta_path = os.path.join(args.out, "metadata.jsonl")
+    meta_path = os.path.join(img_dir, "metadata.jsonl")
     instance_prompt = f"a photo of {args.instance_token} {class_name}"
 
     n_written = 0

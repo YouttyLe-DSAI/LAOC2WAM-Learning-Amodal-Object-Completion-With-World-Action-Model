@@ -6,7 +6,7 @@ paths:
   raw_images: data/raw
   cocoa_dir: data/cocoa
   pseudo_labels: data/pseudo_labels
-  train_ready: data/train_ready
+  train_ready: data/train_ready/instance_images
   output_dir: outputs
 
 pseudo_label:
@@ -17,7 +17,7 @@ pseudo_label:
   dilate_kernel: 5                           # dilation cho occluder mask (px)
 
 model:
-  base_model: "runwayml/stable-diffusion-inpainting"
+  base_model: "runwayml/stable-diffusion-v1-5"
   resolution: 512
   # đổi sang "stabilityai/stable-diffusion-2-inpainting" nếu muốn bản lớn hơn
 
