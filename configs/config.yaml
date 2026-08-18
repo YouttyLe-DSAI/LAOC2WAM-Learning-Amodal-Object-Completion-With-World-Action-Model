@@ -6,8 +6,11 @@ paths:
   raw_images: data/raw
   cocoa_dir: data/cocoa
   pseudo_labels: data/pseudo_labels
+<<<<<<< HEAD
   # LƯU Ý: trỏ thẳng vào instance_images/ (nơi có ảnh + metadata.jsonl),
   # không phải data/train_ready (thư mục cha) -- xem 02b_prepare_dreambooth_data.py
+=======
+>>>>>>> 456f3e57323e9efe6fa483447a4ffa75ecb77c97
   train_ready: data/train_ready/instance_images
   output_dir: outputs
 
@@ -19,10 +22,13 @@ pseudo_label:
   dilate_kernel: 5                           # dilation cho occluder mask (px)
 
 model:
+<<<<<<< HEAD
   # QUAN TRỌNG: dùng bản SD text-to-image thường (4-kênh input), KHÔNG dùng
   # bản "-inpainting" (9-kênh) ở đây -- script 04_train_lora.py train theo
   # công thức DreamBooth chuẩn (chỉ ảnh + caption), không tạo mask/ảnh nền
   # che nên không tương thích với UNet 9-kênh của bản inpainting.
+=======
+>>>>>>> 456f3e57323e9efe6fa483447a4ffa75ecb77c97
   base_model: "runwayml/stable-diffusion-v1-5"
   resolution: 512
 

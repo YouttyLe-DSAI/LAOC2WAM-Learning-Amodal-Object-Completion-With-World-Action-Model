@@ -89,9 +89,12 @@ def main():
     if not src_paths:
         raise SystemExit(f"Không có ảnh nào trong {subject_dir}")
 
+<<<<<<< HEAD
     # QUAN TRỌNG: metadata.jsonl phải nằm CÙNG thư mục với ảnh (img_dir),
     # không phải ở args.out -- vì datasets.load_dataset("imagefolder", ...)
     # tìm cả 2 thứ trong cùng 1 thư mục.
+=======
+>>>>>>> 456f3e57323e9efe6fa483447a4ffa75ecb77c97
     meta_path = os.path.join(img_dir, "metadata.jsonl")
     instance_prompt = f"a photo of {args.instance_token} {class_name}"
 
