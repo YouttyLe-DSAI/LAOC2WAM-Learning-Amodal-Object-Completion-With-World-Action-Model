@@ -36,7 +36,7 @@ train:
   mixed_precision: "fp16"
   prior_preservation: true
   prior_loss_weight: 1.0
-  num_class_images: 50
+  num_class_images: 12
   seed: 42
   checkpointing_steps: 200
 
