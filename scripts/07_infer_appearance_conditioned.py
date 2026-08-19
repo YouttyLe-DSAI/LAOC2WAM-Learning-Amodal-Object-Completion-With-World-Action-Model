@@ -193,6 +193,8 @@ def main():
         clip_in = eval_clip_processor(images=[Image.fromarray(result), Image.fromarray(gt_rgb)],
                                        return_tensors="pt").to(device)
         with torch.no_grad():
+            vision_out = eval_clip_model.vision_model(pixel_values=clip_in["pixel_values"])
+
             emb = eval_clip_model.get_image_features(**clip_in)
         emb = emb / emb.norm(dim=-1, keepdim=True)
         clip_scores.append((emb[0] @ emb[1]).item())
