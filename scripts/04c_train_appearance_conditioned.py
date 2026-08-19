@@ -197,6 +197,7 @@ def main():
         r=train_cfg["lora_rank"], lora_alpha=train_cfg["lora_alpha"],
         lora_dropout=train_cfg["lora_dropout"],
         target_modules=["to_q", "to_k", "to_v", "to_out.0"],
+        modules_to_save=["conv_in"], 
     )
     unet = get_peft_model(unet, lora_config)
     for n, p in unet.named_parameters():
