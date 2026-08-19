@@ -1,11 +1,3 @@
-"""
-Inference cho model Appearance Conditioned (mask + feature vector).
-
-Usage:
-    python scripts/07_infer_appearance_conditioned.py --config configs/config.yaml \
-        --checkpoint outputs/appearance_conditioned/final \
-        --n_samples 5
-"""
 from __future__ import annotations
 
 import argparse
@@ -123,6 +115,14 @@ def run_inference(unet, feature_projector, vae, clip_vision, clip_processor,
     return image
 
 
+def clip_image_embed(clip_model, pixel_values):
+    """Ham thay the get_image_features() -- API do bi doi hanh vi giua cac
+    ban transformers, goi truc tiep vision_model + visual_projection cho
+    chac chan hoat dong dung."""
+    vision_out = clip_model.vision_model(pixel_values=pixel_values)
+    return clip_model.visual_projection(vision_out.pooler_output)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/config.yaml")
@@ -193,9 +193,7 @@ def main():
         clip_in = eval_clip_processor(images=[Image.fromarray(result), Image.fromarray(gt_rgb)],
                                        return_tensors="pt").to(device)
         with torch.no_grad():
-            vision_out = eval_clip_model.vision_model(pixel_values=clip_in["pixel_values"])
-
-            emb = eval_clip_model.get_image_features(**clip_in)
+            emb = clip_image_embed(eval_clip_model, clip_in["pixel_values"])
         emb = emb / emb.norm(dim=-1, keepdim=True)
         clip_scores.append((emb[0] @ emb[1]).item())
 
