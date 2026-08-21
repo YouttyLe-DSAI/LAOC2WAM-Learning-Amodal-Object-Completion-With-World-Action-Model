@@ -224,6 +224,10 @@ def main():
     # 5. Ground truth (ảnh gốc thật, không bị che, để đối chiếu)
     Image.fromarray(gt_rgb).save(os.path.join(stage_dir, "05_ground_truth.png"))
 
+    # 6. Occluder mask (vùng bị che -- dùng để đánh giá đúng vùng repaint)
+    Image.fromarray((occluder_mask * 255).astype(np.uint8), mode="L").save(
+        os.path.join(stage_dir, "06_occluder_mask.png"))
+
     # Ảnh ghép tổng hợp (xem nhanh 1 lần)
     pred_mask_vis = np.stack([mask_bw] * 3, axis=-1)
     combined = np.concatenate([occluded_rgb, pred_mask_vis, cutout, result, gt_rgb], axis=1)
