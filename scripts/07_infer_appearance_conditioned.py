@@ -194,6 +194,8 @@ def main():
                                        return_tensors="pt").to(device)
         with torch.no_grad():
             emb = eval_clip_model.get_image_features(**clip_in)
+        if not isinstance(emb, torch.Tensor):
+            emb = emb.pooler_output if hasattr(emb, "pooler_output") else emb.last_hidden_state
         emb = emb / emb.norm(dim=-1, keepdim=True)
         clip_scores.append((emb[0] @ emb[1]).item())
 
