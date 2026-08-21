@@ -110,6 +110,7 @@ def main():
     cfg = load_config(args.config)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = torch.float16 if device == "cuda" else torch.float32
     resolution = cfg["model"]["resolution"]
     base_model = cfg["model"]["base_model"]
     latent_size = resolution // 8
@@ -134,27 +135,28 @@ def main():
     print(f"Mask dự đoán: {pred_mask.sum()} pixel (so với ground truth {true_amodal.sum()} pixel)")
 
     print("Nạp Appearance model (personalized)...")
-    vae = AutoencoderKL.from_pretrained(base_model, subfolder="vae").to(device, dtype=torch.float16)
+    vae = AutoencoderKL.from_pretrained(base_model, subfolder="vae").to(device, dtype=dtype)
     noise_scheduler = DDPMScheduler.from_pretrained(base_model, subfolder="scheduler")
 
     base_unet = UNet2DConditionModel.from_pretrained(base_model, subfolder="unet")
     base_unet.conv_in = expand_conv_in(base_unet, extra_channels=1)
-    unet = PeftModel.from_pretrained(base_unet, args.appearance_checkpoint).to(device, dtype=torch.float16)
+    unet = PeftModel.from_pretrained(base_unet, args.appearance_checkpoint).to(device, dtype=dtype)
     unet.eval()
+    unet = unet.to(device=device, dtype=dtype)
 
-    clip_vision = CLIPVisionModel.from_pretrained(args.clip_model).to(device, dtype=torch.float16)
+    clip_vision = CLIPVisionModel.from_pretrained(args.clip_model).to(device, dtype=dtype)
     clip_processor = CLIPImageProcessor.from_pretrained(args.clip_model)
     clip_dim = clip_vision.config.hidden_size
     cross_attention_dim = base_unet.config.cross_attention_dim
 
-    feature_projector = FeatureProjector(clip_dim, cross_attention_dim).to(device, dtype=torch.float16)
+    feature_projector = FeatureProjector(clip_dim, cross_attention_dim).to(device, dtype=dtype)
     feature_projector.load_state_dict(
         torch.load(os.path.join(args.appearance_checkpoint, "feature_projector.pt"), map_location=device)
     )
     feature_projector.eval()
 
     clip_inputs = clip_processor(images=Image.fromarray(occluded_rgb), return_tensors="pt")
-    clip_pixel = clip_inputs["pixel_values"].to(device, dtype=torch.float16)
+    clip_pixel = clip_inputs["pixel_values"].to(device, dtype=dtype)
     clip_feat = clip_vision(pixel_values=clip_pixel).pooler_output
     encoder_hidden_states = feature_projector(clip_feat)
 
@@ -163,20 +165,21 @@ def main():
     # nguyên từ ảnh input).
     gen_region = occluder_mask.astype(np.float32)  # 1 = model tự do sinh, 0 = giữ nguyên ảnh gốc
     mask_small = cv2.resize(pred_mask.astype(np.float32), (latent_size, latent_size))
-    mask_latent = torch.from_numpy(mask_small).unsqueeze(0).unsqueeze(0).to(device, dtype=torch.float16)
+    mask_latent = torch.from_numpy(mask_small).unsqueeze(0).unsqueeze(0).to(device, dtype=dtype)
     gen_region_small = cv2.resize(gen_region, (latent_size, latent_size))
-    gen_mask_latent = torch.from_numpy(gen_region_small).unsqueeze(0).unsqueeze(0).to(device, dtype=torch.float16)
-    gen_mask_latent = (gen_mask_latent > 0.5).float()
+    gen_mask_latent = torch.from_numpy(gen_region_small).unsqueeze(0).unsqueeze(0).to(device, dtype=dtype)
+    gen_mask_latent = (gen_mask_latent > 0.5).to(dtype=dtype)
 
     # Encode ẢNH INPUT THẬT (bị che) -- vùng ngoài occluder trong latent này
     # là "đáp án đúng" cần giữ nguyên xuyên suốt quá trình khử nhiễu.
     known_pixel = transforms.Compose([transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])(
         Image.fromarray(occluded_rgb)
-    ).unsqueeze(0).to(device, dtype=torch.float16)
+    ).unsqueeze(0).to(device, dtype=dtype)
     known_latents = vae.encode(known_pixel).latent_dist.sample() * vae.config.scaling_factor
 
-    latents = torch.randn((1, 4, latent_size, latent_size), device=device, dtype=torch.float16)
+    latents = torch.randn((1, 4, latent_size, latent_size), device=device, dtype=dtype)
     noise_scheduler.set_timesteps(args.num_inference_steps, device=device)
+    unet_dtype = next(unet.parameters()).dtype
     for t in noise_scheduler.timesteps:
         # RÀNG BUỘC (RePaint-style): vùng ngoài occluder = ép về đúng ảnh
         # gốc (đã thêm nhiễu tương ứng mức t); vùng occluder = giữ nguyên
@@ -185,8 +188,8 @@ def main():
         noisy_known = noise_scheduler.add_noise(known_latents, step_noise, t.unsqueeze(0))
         latents = gen_mask_latent * latents + (1 - gen_mask_latent) * noisy_known
 
-        unet_input = torch.cat([latents, mask_latent], dim=1)
-        noise_pred = unet(unet_input, t, encoder_hidden_states).sample
+        unet_input = torch.cat([latents, mask_latent], dim=1).to(dtype=unet_dtype)
+        noise_pred = unet(unet_input, t, encoder_hidden_states.to(dtype=unet_dtype)).sample
         latents = noise_scheduler.step(noise_pred, t, latents).prev_sample
 
     # Ép buộc cuối cùng (t=0, không nhiễu): đảm bảo vùng ngoài occluder
